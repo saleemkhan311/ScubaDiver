@@ -45,9 +45,9 @@ public class Trash : MonoBehaviour
             {
                 GameManager.Singleton.collectedTrash++;
                 GameManager.Singleton.totalTrash--;
-                Destroy(gameObject);
-                transform.position = collision.collider.transform.position;
-                //GetComponent<BoxCollider2D>().enabled = false;
+                Destroy(rb);
+                //transform.position = collision.collider.transform.position;
+                GetComponent<BoxCollider2D>().enabled = false;
                 
             }
         }

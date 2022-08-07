@@ -15,12 +15,14 @@ public class PlayerController : MonoBehaviour
     [SerializeField] LayerMask jumpableSubmarine;
     SpriteRenderer sprite;
     BoxCollider2D collider;
+    Animator anim;
     [SerializeField] Sprite[] sprites;
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
         sprite = GetComponent<SpriteRenderer>();
         collider = GetComponent<BoxCollider2D>();
+        anim = GetComponent<Animator>();
 
     }
 
@@ -36,6 +38,7 @@ public class PlayerController : MonoBehaviour
         {
             transform.position = new Vector2(-8.5f, transform.position.y);
         }
+
     }
 
     void FixedUpdate()
@@ -50,28 +53,7 @@ public class PlayerController : MonoBehaviour
         }
         
 
-        if (horizontal==1)
-        {
-            sprite.sprite = sprites[2];
-            sprite.flipX = false;
-        }
-        else if(horizontal == -1)
-        {
-            sprite.sprite = sprites[2];
-            sprite.flipX = true;
-        }
-        else if (rb.velocity.y > .1)
-        {
-            sprite.sprite = sprites[1];
-        }
-        else if (rb.velocity.y < -2)
-        {
-            sprite.sprite = sprites[0];
-        }
-        else
-        {
-            sprite.sprite = sprites[0];
-        }
+       
 
         bool isGrounded()
         {
@@ -85,8 +67,5 @@ public class PlayerController : MonoBehaviour
 
 
     }
-    public void Constraint()
-    {
-        
-    }
+    
 }
