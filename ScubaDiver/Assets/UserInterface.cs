@@ -19,6 +19,7 @@ public class UserInterface : MonoBehaviour
     {
         scoreText.text = "Score: "+GameManager.Singleton.score.ToString();
         totalNTrash.text = GameManager.Singleton.totalTrash+"/30";
+        
 
         float num = (float)GameManager.Singleton.collectedTrash;
         shootFill.fillAmount =  Mathf.Lerp(shootFill.fillAmount, num / 3.0f, 3*Time.deltaTime);

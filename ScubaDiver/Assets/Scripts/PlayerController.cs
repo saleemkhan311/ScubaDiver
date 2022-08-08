@@ -31,6 +31,8 @@ public class PlayerController : MonoBehaviour
     private void Update()
     {
 
+       
+
         if (GameManager.Singleton.gameOver)
         {
             this.enabled = false;

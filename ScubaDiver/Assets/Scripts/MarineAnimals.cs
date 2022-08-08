@@ -25,6 +25,16 @@ public class MarineAnimals : MonoBehaviour
             // speed *= -1;
         }
 
-        transform.Translate(speed * Time.deltaTime, 0f, 0f);
+        float increas = Time.time / 200000;
+
+        if (speed <= 8)
+        {
+            speed += increas;
+
+        }
+       
+        Debug.Log(increas);
+
+        transform.Translate((speed * Time.deltaTime) + increas, 0f, 0f);
     }
 }
