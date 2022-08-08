@@ -41,6 +41,11 @@ public class GameManager : MonoBehaviour
         {
             gameOver = true;
         }
+
+        if (gameOver)
+            Time.timeScale = 0;
+        if (!gameOver)
+            Time.timeScale = 1;
     }
 
     
