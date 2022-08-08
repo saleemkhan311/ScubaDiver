@@ -10,7 +10,7 @@ public class Gun : MonoBehaviour
     public Transform shotPoint;
     public GameObject trashBag;
     public GameObject trash;
-    
+    GameObject newBullet;
     void Start()
     {
         
@@ -19,36 +19,38 @@ public class Gun : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        if(GameManager.Singleton.gameOver)
+        {
+            this.enabled = false;
+        }
 
         Vector2 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+       
         Vector2 ArrowPos = transform.position;
         Vector2 direction = mousePos - ArrowPos;
         transform.right = direction ;
 
+
         if(Input.GetMouseButtonDown(0) || Input.GetKeyDown(KeyCode.E))
         {
-            if (GameManager.Singleton.collectedTrash > 3)
+            if (GameManager.Singleton.collectedTrash >= 3)
             {
+                Debug.Log("Shoot");
                 Shoot();
                 GameManager.Singleton.collectedTrash = 0;
+                GameManager.Singleton.score++;
             }
 
            
         }
-        
-        
 
-       /* if(trashBag.transform.GetChildCount() >0)
+
+
+        Orientation();
+        if (newBullet != null &&  newBullet.transform.position.y >= 15)
         {
-            GameObject trash0 = trashBag.transform.GetChild(0).gameObject;
-            GameObject trash1 = trashBag.transform.GetChild(1).gameObject;
-            GameObject trash2 = trashBag.transform.GetChild(2).gameObject;
-            bullets[0] = trash0;
-            bullets[1] = trash1;
-            bullets[2] = trash2;
-        }*/
-
-        
+            Destroy(newBullet);
+        }
 
     }
 
@@ -57,39 +59,38 @@ public class Gun : MonoBehaviour
    
 
 
-
-
-    /*void Shoot()
+    void Orientation()
     {
-        
-       
-
-        
-        for (int i = 1; i <= 3; i++)
+        float x = Input.GetAxis("Horizontal");
+        if (x > 0)
         {
-            GameObject newBullet = Instantiate(bullets[i], shotPoint.transform.position, shotPoint.transform.rotation);
-            newBullet.AddComponent<Rigidbody2D>();
             
-            newBullet.GetComponent<Rigidbody2D>().velocity = transform.right * launchForce * Time.deltaTime;
-            Debug.Log(i);
+            transform.localScale = new Vector3(1, transform.localScale.y, transform.localScale.z);
+
         }
+        else if (x < 0)
+        {
 
+            
 
-    }*/
+            transform.localScale = new Vector3(-1, transform.localScale.y, transform.localScale.z);
+        }
+    }
+
+    
 
     void Shoot()
     {
-        GameObject bullet = bullets[Random.Range(0, 7)];
+         GameObject bullet = bullets[Random.Range(0, 7)];
 
-        GameObject newBullet = Instantiate(bullet, shotPoint.transform.position, shotPoint.transform.rotation);
+         newBullet = Instantiate(bullet, shotPoint.transform.position, shotPoint.transform.rotation);
+
         newBullet.GetComponent<BoxCollider2D>().enabled = false;
-        newBullet.GetComponent<Trash>().temp = false;
-        // newBullet.GetComponent<Rigidbody2D>().velocity = transform.right * launchForce*Time.deltaTime;
-        for (int i = 1; i <= 3; i++)
-        {
-            newBullet.GetComponent<Rigidbody2D>().velocity = transform.right * launchForce * Time.deltaTime;
-        }
-
+        //newBullet.GetComponent<Trash>().temp = false;
+        newBullet.name = "Trash";
+        newBullet.GetComponent<Rigidbody2D>().velocity = transform.right * launchForce * Time.deltaTime;
+        
+        
 
     }
 }

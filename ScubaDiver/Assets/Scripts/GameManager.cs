@@ -5,7 +5,7 @@ using UnityEngine;
 public class GameManager : MonoBehaviour
 {
     private static GameManager _singleton;
-   
+    public bool gameOver;
     public static GameManager Singleton
     {
         get => _singleton;
@@ -24,20 +24,22 @@ public class GameManager : MonoBehaviour
 
     public int totalTrash;
     public int collectedTrash;
+    public int score;
     
 
     void Start()
     {
         Singleton = this;
+        gameOver = false;
     }
 
     
     void Update()
     {
-        Debug.Log(collectedTrash);
+        Debug.Log("Collect: "+collectedTrash);
         if(totalTrash >=15)
         {
-            
+            gameOver = true;
         }
     }
 

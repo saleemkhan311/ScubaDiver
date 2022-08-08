@@ -30,6 +30,13 @@ public class PlayerController : MonoBehaviour
 
     private void Update()
     {
+
+        if (GameManager.Singleton.gameOver)
+        {
+            this.enabled = false;
+        }
+
+
         if (transform.position.x > 8.5)
         {
             transform.position = new Vector2(8.5f, transform.position.y);

@@ -17,6 +17,11 @@ public class Animation : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        if (GameManager.Singleton.gameOver)
+        {
+            this.enabled = false;
+        }
+
         float horizontal = Input.GetAxis("Horizontal");
 
         AnimStates state;
@@ -55,18 +60,12 @@ public class Animation : MonoBehaviour
 
         if (Input.GetKeyDown(KeyCode.F))
         {
-            anim.SetBool("isPicking", true);
-            Debug.Log("Working");
-            StartCoroutine(timer(.5f));
+            
         }
 
         anim.SetInteger("animState", (int)state);
       
     }
 
-    IEnumerator timer(float time)
-    {
-        yield return new WaitForSeconds(time);
-       anim.SetBool("isPicking", false);
-    }
+   
 }

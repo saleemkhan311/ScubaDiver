@@ -13,6 +13,13 @@ public class Trash : MonoBehaviour
     }
     void Update()
     {
+
+        if (GameManager.Singleton.gameOver)
+        {
+            this.enabled = false;
+        }
+
+
         if (transform.position.y >= -3)
         {
             transform.Translate(0, speed * Time.deltaTime, 0);
@@ -20,7 +27,7 @@ public class Trash : MonoBehaviour
         }
 
         
-        if(temp)
+        //if(temp)
             Constraint();
     }
 
@@ -41,13 +48,15 @@ public class Trash : MonoBehaviour
     {
         if(collision.collider.tag=="Player")
         {
-            if(GameManager.Singleton.collectedTrash <4)
+            if(GameManager.Singleton.collectedTrash <=2)
             {
-                GameManager.Singleton.collectedTrash++;
-                GameManager.Singleton.totalTrash--;
-                Destroy(rb);
-                //transform.position = collision.collider.transform.position;
-                GetComponent<BoxCollider2D>().enabled = false;
+               
+                    GameManager.Singleton.collectedTrash++;
+                    GameManager.Singleton.totalTrash--;
+                    Destroy(rb);
+                    //transform.position = collision.collider.transform.position;
+                    GetComponent<BoxCollider2D>().enabled = false;
+                
                 
             }
         }

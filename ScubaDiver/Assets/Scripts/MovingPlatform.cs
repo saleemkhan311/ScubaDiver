@@ -17,7 +17,15 @@ public class MovingPlatform : MonoBehaviour
     void Update()
     {
 
-        if(transform.position.x>15)
+
+        if (GameManager.Singleton.gameOver)
+        {
+            this.enabled = false;
+        }
+
+
+
+        if (transform.position.x>15)
         {
             transform.rotation = Quaternion.Euler(transform.rotation.x, 0, transform.rotation.z);
            
