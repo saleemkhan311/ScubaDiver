@@ -6,6 +6,8 @@ public class MarineAnimals : MonoBehaviour
 {
     // Start is called before the first frame update
     public float speed;
+    public float speedIncrease;
+    public float maxSpeed;
     void Start()
     {
         
@@ -25,16 +27,15 @@ public class MarineAnimals : MonoBehaviour
             // speed *= -1;
         }
 
-        float increas = Time.time / 200000;
+        float increase = Time.time / speedIncrease;
 
-        if (speed <= 8)
+        if (speed <= maxSpeed)
         {
-            speed += increas;
-
+            speed += increase;
         }
        
-        Debug.Log(increas);
+        Debug.Log(increase);
 
-        transform.Translate((speed * Time.deltaTime) + increas, 0f, 0f);
+        transform.Translate((speed * Time.deltaTime) + increase, 0f, 0f);
     }
 }
