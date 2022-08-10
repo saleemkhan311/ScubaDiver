@@ -1,80 +1,93 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class PlayerController : MonoBehaviour
 {
-    Rigidbody2D rb;
-    public float moveSpeed =10;
+    private Rigidbody2D _rb;
+    public float moveSpeed = 10;
     public float jumpForce;
-    
-    float isJumping;
-    float vertical;
-    float horizontal;
-    [SerializeField] LayerMask jumpableGround;
-    [SerializeField] LayerMask jumpableSubmarine;
-    SpriteRenderer sprite;
-    BoxCollider2D collider;
-    Animator anim;
-    [SerializeField] Sprite[] sprites;
-    void Start()
-    {
-        rb = GetComponent<Rigidbody2D>();
-        sprite = GetComponent<SpriteRenderer>();
-        collider = GetComponent<BoxCollider2D>();
-        anim = GetComponent<Animator>();
 
+    [SerializeField] private LayerMask jumpableGround;
+    [SerializeField] private LayerMask jumpableSubmarine;
+    private BoxCollider2D _collider;
+    [SerializeField] private Sprite[] sprites;
+    [SerializeField] private Image powerShot;
+    
+    //---------------------Audio Clips--------------------
+    [SerializeField] private AudioClip jumpClip;
+
+
+    private TrashCollect _collect;
+
+    private void Start()
+    {
+        _rb = GetComponent<Rigidbody2D>();
+        _collider = GetComponent<BoxCollider2D>();
+        _collect = GetComponent<TrashCollect>();
+        powerShot.fillAmount = 0;
     }
 
-    // Update is called once per frame
+    // private void Update()
+    // {
+    //     // if (GameManager.Singleton.gameOver)
+    //     // {
+    //     //     this.enabled = false;
+    //     // }
+    //
+    //
+    //     if (transform.position.x > 8.5)
+    //     {
+    //         transform.position = new Vector2(8.5f, transform.position.y);
+    //     }
+    //     else if (transform.position.x < -8.5)
+    //     {
+    //         transform.position = new Vector2(-8.5f, transform.position.y);
+    //     }
+    //
+    // }
+
+    private float _powerCharge;
 
     private void Update()
     {
-
-       
-
-        if (GameManager.Singleton.gameOver)
+        if (Input.GetMouseButton(0))
         {
-            this.enabled = false;
+            _powerCharge += .25f * Time.deltaTime;
+            powerShot.fillAmount = _powerCharge;
         }
 
-
-        if (transform.position.x > 8.5)
+        if (Input.GetMouseButtonUp(0))
         {
-            transform.position = new Vector2(8.5f, transform.position.y);
+            // Debug.Log($"Shot Power {_powerCharge}");
+            _collect.ThrowTrash(_powerCharge);
+            _powerCharge = 0;
+            powerShot.fillAmount = _powerCharge;
+            // shoot the trash out through projectile
         }
-        else if (transform.position.x < -8.5)
-        {
-            transform.position = new Vector2(-8.5f, transform.position.y);
-        }
-
+        // Debug.Log($" hold {Input.GetMouseButton(0)}");
+        // Debug.Log($" released {Input.GetMouseButtonUp(0)}");
     }
 
-    void FixedUpdate()
+    private void FixedUpdate()
     {
-        float horizontal = Input.GetAxisRaw("Horizontal");
-        rb.velocity=new Vector2(horizontal * moveSpeed, rb.velocity.y);
-        
-        if((Input.GetButtonDown("Jump") && isGrounded()) ||(Input.GetButtonDown("Jump") && isGrounded2()))
-        {
-            rb.velocity = new Vector2(rb.velocity.x, jumpForce) ;
-            
-        }
-        
+        var horizontal = Input.GetAxisRaw("Horizontal");
+        var jumpKey = Input.GetButtonDown("Jump") || Input.GetKeyDown(KeyCode.W);
 
-       
-
-        bool isGrounded()
+        var jForce = _rb.velocity.y;
+        if (IsGrounded() && jumpKey)
         {
-            return Physics2D.BoxCast(collider.bounds.center, collider.bounds.size, 0f, Vector2.down,0.1f,jumpableGround);
-        }
-        bool isGrounded2()
-        {
-            return Physics2D.BoxCast(collider.bounds.center, collider.bounds.size, 0f, Vector2.down, 0.1f, jumpableSubmarine);
+            GameManager.Singleton.PlayAudio(jumpClip);
+            jForce = jumpForce;
         }
 
-
-
+        _rb.velocity = new Vector2(horizontal * moveSpeed, jForce);
     }
-    
+
+    private bool IsGrounded()
+    {
+        var etraHeight = .2f;
+        var bounds = _collider.bounds;
+        var rayCast = Physics2D.Raycast(bounds.center, Vector2.down, bounds.extents.y + etraHeight, jumpableGround);
+        return rayCast.collider != null;
+    }
 }

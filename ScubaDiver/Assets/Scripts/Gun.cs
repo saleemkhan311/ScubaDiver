@@ -31,26 +31,26 @@ public class Gun : MonoBehaviour
         transform.right = direction ;
 
 
-        if(Input.GetMouseButtonDown(0) || Input.GetKeyDown(KeyCode.E))
-        {
-            if (GameManager.Singleton.collectedTrash >= 3)
-            {
-                Debug.Log("Shoot");
-                Shoot();
-                GameManager.Singleton.collectedTrash = 0;
-                GameManager.Singleton.score++;
-            }
-
-           
-        }
+        // if(Input.GetMouseButtonDown(0) || Input.GetKeyDown(KeyCode.E))
+        // {
+        //     if (GameManager.Singleton.collectedTrash >= 3)
+        //     {
+        //         Debug.Log("Shoot");
+        //         Shoot();
+        //         GameManager.Singleton.collectedTrash = 0;
+        //         GameManager.Singleton.score++;
+        //     }
+        //
+        //    
+        // }
 
 
 
         Orientation();
-        if (newBullet != null &&  newBullet.transform.position.y >= 15)
-        {
-            Destroy(newBullet);
-        }
+        // if (newBullet != null &&  newBullet.transform.position.y >= 15)
+        // {
+        //     Destroy(newBullet);
+        // }
 
     }
 
