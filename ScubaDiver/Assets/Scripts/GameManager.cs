@@ -1,5 +1,4 @@
 using System.Data;
-using System.IO;
 using TMPro;
 using Mono.Data.Sqlite;
 using UnityEngine;
@@ -26,15 +25,23 @@ public class GameManager : MonoBehaviour
     }
 
     //--------------------------- User Interface -----------------------------------
-    [SerializeField] private Text scoreText;
+    [Header("In Game UI")] [SerializeField]
+    private Text scoreText;
+
     [SerializeField] private Text highestScore;
     [SerializeField] private Text totalNTrash;
     [SerializeField] private GameObject gameOverPanel;
-    [SerializeField] private GameObject startMenu;
+
+    [Header("Start Menu")] [SerializeField]
+    private GameObject startMenu;
+
     [SerializeField] private TMP_InputField nameInput;
     [SerializeField] private TMP_Dropdown teamPicker;
-
     [SerializeField] private GameObject inGameMenu;
+
+    [Header("LeaderBoard")]
+    [SerializeField] private RectTransform leaderBoardParent;
+    [SerializeField] private GameObject historyBoxPrefab;
     //------------------------ player tracking--------------------------------
 
     private int _highestScore;
@@ -44,14 +51,15 @@ public class GameManager : MonoBehaviour
     public bool gameOver;
 
     private bool _startedGame = false;
+
     public int TotalTrash
     {
         get => _totalTrash;
         set
         {
-            if (value >= 30) GameOver();
+            if (value >= maxTrashNumber) GameOver();
             _totalTrash = value;
-            totalNTrash.text = $"{value}/30";
+            totalNTrash.text = $"{value}/{maxTrashNumber}";
         }
     }
 
@@ -72,7 +80,9 @@ public class GameManager : MonoBehaviour
 
     //---------------------------Trash--------------------------------------
     [Header("Trash")] [SerializeField] private GameObject[] trash;
+    [SerializeField] private int maxTrashNumber;
     [SerializeField] private float trashSpawnDelay;
+    [SerializeField] private int trashSpawnFrequency;
     [SerializeField] private Transform trashParent;
 
     //--------------------------Player Audio -----------------------------------------
@@ -87,7 +97,9 @@ public class GameManager : MonoBehaviour
         get
         {
             if (_dbConnection != null) return _dbConnection;
-            var db = "URI=file:" + Application.dataPath + "/PlayerData/database.db";
+            var path = Application.dataPath + "/PlayerData/";
+            // if (!File.Exists(path)) File.Create(path);
+            var db = "URI=file:" + path + "database.db";
             _dbConnection = new SqliteConnection(db);
             _dbConnection.Open();
             return _dbConnection;
@@ -104,6 +116,7 @@ public class GameManager : MonoBehaviour
         Time.timeScale = 0;
         inGameMenu.SetActive(false);
         startMenu.SetActive(true);
+        LoadScores();
         LoadHighestScore();
     }
 
@@ -114,7 +127,9 @@ public class GameManager : MonoBehaviour
         if (Time.fixedTime % 60 == 0)
         {
             trashSpawnDelay -= .5f;
-            trashSpawnDelay = Mathf.Clamp(trashSpawnDelay, 1, 5);
+            trashSpawnDelay = Mathf.Clamp(trashSpawnDelay, 2, 5);
+            trashSpawnFrequency++;
+            trashSpawnFrequency = Mathf.Clamp(trashSpawnFrequency, 1, 4);
         }
     }
 
@@ -129,9 +144,12 @@ public class GameManager : MonoBehaviour
 
     private void SpawnTrash()
     {
-        var ran = Random.Range(0, trash.Length);
-        Instantiate(trash[ran], new Vector2(Random.Range(-8, 8), 6), Quaternion.identity, trashParent);
-        TotalTrash++;
+        for (var i = 0; i < trashSpawnFrequency; i++)
+        {
+            Instantiate(trash[Random.Range(0, trash.Length)], new Vector2(Random.Range(-8, 8), 6), Quaternion.identity, trashParent);
+            TotalTrash++;
+        }
+
         if (!gameOver)
         {
             Invoke(nameof(SpawnTrash), trashSpawnDelay);
@@ -140,7 +158,7 @@ public class GameManager : MonoBehaviour
 
     public void GameOver()
     {
-        Debug.Log("trashSpawn: "+trashSpawnDelay);
+        Debug.Log("trashSpawn: " + trashSpawnDelay);
         gameOver = true;
         gameOverPanel.SetActive(true);
         Time.timeScale = 0;
@@ -193,6 +211,33 @@ public class GameManager : MonoBehaviour
                 {
                     _highestScore = reader.GetInt32(0);
                     highestScore.text = $"HighScore: {_highestScore}";
+                }
+            }
+        }
+    }
+
+    // Loading all the score list for leaderboard
+    private void LoadScores()
+    {
+        var query = "select * from scores order by score desc;";
+        using (var cmd = DbConnection.CreateCommand())
+        {
+            cmd.CommandText = query;
+            using (var reader = cmd.ExecuteReader())
+            {
+                var count = 0;
+                while (reader.Read())
+                {
+                    var data = new PlayerData()
+                    {
+                        playerName = reader.GetString(1),
+                        team = reader.GetString(2),
+                        score = reader.GetInt32(3),
+                    };
+                    var box = Instantiate(historyBoxPrefab, leaderBoardParent).GetComponent<HistoryBox>();
+                    box.SetData(data);
+                    count++;
+                    leaderBoardParent.sizeDelta = new Vector2(380, count * 50);
                 }
             }
         }

@@ -20,4 +20,9 @@ public struct PlayerData
     {
         return $"INSERT INTO scores (playerName, team, score) VALUES (\'{playerName}\', \'{team}\',{score});";
     }
+
+    public override string ToString()
+    {
+        return $"{playerName} from team {team} has score {score}";
+    }
 }
