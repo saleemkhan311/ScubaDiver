@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 
 public class TrashCollect : MonoBehaviour
@@ -14,6 +15,8 @@ public class TrashCollect : MonoBehaviour
     [Header("Audio Clip")] [SerializeField]
     private AudioClip pickup;
 
+    [SerializeField] private TMP_Text holding;
+
     private void Start()
     {
         _holdingTrash = 0;
@@ -26,8 +29,10 @@ public class TrashCollect : MonoBehaviour
         {
             trash.Throw(shootPoint.right * powerCharge * 100);
         }
+
         trashList.Clear();
         _holdingTrash = 0;
+        holding.text = "Holding: " + $"{_holdingTrash}".PadLeft(2, '0');
     }
 
     // void destroyChild()
@@ -55,6 +60,7 @@ public class TrashCollect : MonoBehaviour
         script.DisableTrash();
         trashList.Add(script);
         _holdingTrash++;
+        holding.text = "Holding: " + $"{_holdingTrash}".PadLeft(2, '0');
         StartCoroutine(Timer(1f));
     }
 
