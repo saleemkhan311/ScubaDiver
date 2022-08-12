@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
@@ -15,12 +16,19 @@ public class TrashCollect : MonoBehaviour
     [Header("Audio Clip")] [SerializeField]
     private AudioClip pickup;
 
+    [SerializeField] private Transform pCanvas;
     [SerializeField] private TMP_Text holding;
+    [SerializeField] private Vector3 pCanvasOffsetPosition;
 
     private void Start()
     {
         _holdingTrash = 0;
         _anim = GetComponent<Animator>();
+    }
+
+    private void Update()
+    {
+        pCanvas.position = transform.position + pCanvasOffsetPosition;
     }
 
     public void ThrowTrash(float powerCharge)

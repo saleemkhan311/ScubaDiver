@@ -1,6 +1,4 @@
-using System.Data;
 using TMPro;
-using Mono.Data.Sqlite;
 using UnityEngine;
 using UnityEngine.UI;
 using Random = UnityEngine.Random;
@@ -39,12 +37,19 @@ public class GameManager : MonoBehaviour
     [SerializeField] private TMP_Dropdown teamPicker;
     [SerializeField] private GameObject inGameMenu;
 
-    [Header("LeaderBoard")]
-    [SerializeField] private RectTransform leaderBoardParent;
+    [Header("LeaderBoard")] [SerializeField]
+    private RectTransform leaderBoardParent;
+
     [SerializeField] private GameObject historyBoxPrefab;
+
+    private int _totalDataCount = 0;
     //------------------------ player tracking--------------------------------
 
-    private int _highestScore;
+    public int HighestScore
+    {
+        set => highestScore.text = $"HighScore: {value}";
+    }
+
     private int _score;
     private int _totalTrash;
 
@@ -90,25 +95,35 @@ public class GameManager : MonoBehaviour
 
     //---------- Data attributes---------------------------------
     private PlayerData _data;
-    private IDbConnection _dbConnection;
-
-    public IDbConnection DbConnection
-    {
-        get
-        {
-            if (_dbConnection != null) return _dbConnection;
-            var path = Application.dataPath + "/PlayerData/";
-            // if (!File.Exists(path)) File.Create(path);
-            var db = "URI=file:" + path + "database.db";
-            _dbConnection = new SqliteConnection(db);
-            _dbConnection.Open();
-            return _dbConnection;
-        }
-    }
+    // private IDbConnection _dbConnection;
+    //
+    // public IDbConnection DbConnection
+    // {
+    //     get
+    //     {
+    //         if (_dbConnection != null) return _dbConnection;
+    //         var path = Application.dataPath + "/PlayerData/";
+    //         try
+    //         {
+    //             if (!File.Exists(path)) File.Create(path);
+    //         }
+    //         catch
+    //         {
+    //             //ignore
+    //         }
+    //
+    //         var db = "URI=file:" + path + "database.db";
+    //         Debug.Log(db);
+    //         _dbConnection = new SqliteConnection(db);
+    //         _dbConnection.Open();
+    //         return _dbConnection;
+    //     }
+    // }
 
     private void Start()
     {
         Singleton = this;
+        WebSocketClient.Singleton.StartServer();
         gameOver = false;
         TotalTrash = Score = 0;
         SpawnRandomAnimals();
@@ -116,20 +131,18 @@ public class GameManager : MonoBehaviour
         Time.timeScale = 0;
         inGameMenu.SetActive(false);
         startMenu.SetActive(true);
-        LoadScores();
-        LoadHighestScore();
     }
 
     private void Update()
     {
         if (!_startedGame) return;
         if (gameOver) return;
-        if (Time.fixedTime % 60 == 0)
+        if (Time.fixedTime % 120 == 0)
         {
             trashSpawnDelay -= .5f;
             trashSpawnDelay = Mathf.Clamp(trashSpawnDelay, 2, 5);
             trashSpawnFrequency++;
-            trashSpawnFrequency = Mathf.Clamp(trashSpawnFrequency, 1, 4);
+            trashSpawnFrequency = Mathf.Clamp(trashSpawnFrequency, 1, 3);
         }
     }
 
@@ -146,7 +159,8 @@ public class GameManager : MonoBehaviour
     {
         for (var i = 0; i < trashSpawnFrequency; i++)
         {
-            Instantiate(trash[Random.Range(0, trash.Length)], new Vector2(Random.Range(-8, 8), 6), Quaternion.identity, trashParent);
+            Instantiate(trash[Random.Range(0, trash.Length)], new Vector2(Random.Range(-8, 8), 6), Quaternion.identity,
+                trashParent);
             TotalTrash++;
         }
 
@@ -158,7 +172,7 @@ public class GameManager : MonoBehaviour
 
     public void GameOver()
     {
-        Debug.Log("trashSpawn: " + trashSpawnDelay);
+        RequestLeaderBoardData();
         gameOver = true;
         gameOverPanel.SetActive(true);
         Time.timeScale = 0;
@@ -179,68 +193,83 @@ public class GameManager : MonoBehaviour
         _data = new PlayerData
         {
             playerName = nameInput.text,
-            team = teamPicker.options[teamPicker.value].text,
+            className = teamPicker.options[teamPicker.value].text,
             score = 0
         };
-        Debug.Log(_data.SaveQuery());
         Time.timeScale = 1;
         startMenu.SetActive(false);
         inGameMenu.SetActive(true);
         _startedGame = true;
+        RequestHighScore();
     }
 
     //-------------------------------------------------------Data Manager-----------------------------------------
     private void SavePlayerData()
     {
-        using (var cmd = DbConnection.CreateCommand())
-        {
-            cmd.CommandText = _data.SaveQuery();
-            cmd.ExecuteScalar();
-        }
+        WebSocketClient.Singleton.Request(_data.ToData()); // SaveData:
+        // RipNetwork.Singleton.client.Send(_data.ToRipMsg());
     }
 
-    private void LoadHighestScore()
+    private void RequestHighScore()
     {
-        using (var cmd = DbConnection.CreateCommand())
-        {
-            var query = "select max(score) as highscore from scores";
-            cmd.CommandText = query;
-            using (var reader = cmd.ExecuteReader())
-            {
-                while (reader.Read())
-                {
-                    _highestScore = reader.GetInt32(0);
-                    highestScore.text = $"HighScore: {_highestScore}";
-                }
-            }
-        }
+        WebSocketClient.Singleton.Request("highscore");
+        // var msg = Message.Create(MessageSendMode.reliable, ClientToServer.RequestHighScore);
+        // msg.AddInt(0);
+        // RipNetwork.Singleton.client.Send(msg);
+        // using (var cmd = DbConnection.CreateCommand())
+        // {
+        //     var query = "select max(score) as highscore from scores";
+        //     cmd.CommandText = query;
+        //     using (var reader = cmd.ExecuteReader())
+        //     {
+        //         while (reader.Read())
+        //         {
+        //             _highestScore = reader.GetInt32(0);
+        //             highestScore.text = $"HighScore: {_highestScore}";
+        //         }
+        //     }
+        // }
     }
 
     // Loading all the score list for leaderboard
-    private void LoadScores()
+    private void RequestLeaderBoardData()
     {
-        var query = "select * from scores order by score desc;";
-        using (var cmd = DbConnection.CreateCommand())
-        {
-            cmd.CommandText = query;
-            using (var reader = cmd.ExecuteReader())
-            {
-                var count = 0;
-                while (reader.Read())
-                {
-                    var data = new PlayerData()
-                    {
-                        playerName = reader.GetString(1),
-                        team = reader.GetString(2),
-                        score = reader.GetInt32(3),
-                    };
-                    var box = Instantiate(historyBoxPrefab, leaderBoardParent).GetComponent<HistoryBox>();
-                    box.SetData(data);
-                    count++;
-                    leaderBoardParent.sizeDelta = new Vector2(380, count * 50);
-                }
-            }
-        }
+        Debug.Log(WebSocketClient.Singleton + " web socket");
+        WebSocketClient.Singleton.Request("leaderBoard");
+        // var msg = Message.Create(MessageSendMode.reliable, ClientToServer.RequestLeaderBoard);
+        // msg.AddInt(0);
+        // RipNetwork.Singleton.client.Send(msg);
+        // var query = "select * from scores order by score desc;";
+        // using (var cmd = DbConnection.CreateCommand())
+        // {
+        //     cmd.CommandText = query;
+        //     using (var reader = cmd.ExecuteReader())
+        //     {
+        //         var count = 0;
+        //         while (reader.Read())
+        //         {
+        //             var data = new PlayerData()
+        //             {
+        //                 playerName = reader.GetString(1),
+        //                 team = reader.GetString(2),
+        //                 score = reader.GetInt32(3),
+        //             };
+        //             var box = Instantiate(historyBoxPrefab, leaderBoardParent).GetComponent<HistoryBox>();
+        //             box.SetData(data);
+        //             count++;
+        //             leaderBoardParent.sizeDelta = new Vector2(380, count * 50);
+        //         }
+        //     }
+        // }
+    }
+
+    public void AddDataToLeaderBoard(PlayerData data)
+    {
+        Debug.Log(data.ToString());
+        var box = Instantiate(historyBoxPrefab, leaderBoardParent).GetComponent<HistoryBox>();
+        box.SetData(data);
+        _totalDataCount++;
+        leaderBoardParent.sizeDelta = new Vector2(380, _totalDataCount * 50);
     }
 
     // private void Update()

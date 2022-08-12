@@ -10,7 +10,7 @@ public class HistoryBox : MonoBehaviour
     public void SetData(PlayerData data)
     {
         playerName.text = data.playerName;
-        team.text = data.team;
+        team.text = data.className;
         score.text = $"{data.score}".PadLeft(3, '0');
     }
 }
