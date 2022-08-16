@@ -6,11 +6,14 @@ public class MarineAnimals : MonoBehaviour
 
     private void Update()
     {
-        transform.Translate(speed * Time.deltaTime, 0f, 0f);
-        if (Mathf.Abs(transform.position.x) < 30) return;
         var trans = transform;
+        // trans.position = trans.right * (speed * Time.deltaTime);
+        trans.Translate(speed * Time.deltaTime, 0f, 0f);
+        if (Mathf.Abs(trans.position.x) < 30) return;
+        var cond = trans.position.x < 0;
+        speed *= -1;
         var rot = trans.rotation;
-        rot = Quaternion.Euler(rot.x, rot.y + 180, rot.z);
+        rot = Quaternion.Euler(rot.x, cond ? 0 : 180, rot.z);
         transform.rotation = rot;
         // if (transform.position.x > 30)
         // {

@@ -1,7 +1,16 @@
 using System;
-using System.Text;
-using NativeWebSocket;
+using System.Collections;
+using System.Collections.Generic;
+using Newtonsoft.Json.Linq;
 using UnityEngine;
+using UnityEngine.Networking;
+
+public enum RequestApis
+{
+    highscore,
+    leaderboard,
+    savedata
+}
 
 public class WebSocketClient : MonoBehaviour
 {
@@ -22,88 +31,177 @@ public class WebSocketClient : MonoBehaviour
         }
     }
 
-    [SerializeField] private string host;
-    [SerializeField] private int port;
+    // [SerializeField] private string host;
+    // [SerializeField] private int port;
 
-    private WebSocket _socket;
+    private const string URL = "http://54.255.123.14:5000";
+
+    // private WebSocket _socket;
 
     private void Awake()
     {
         Singleton = this;
     }
 
-    public async void StartServer()
+    public void RequestApi(RequestApis api, WWWForm data = null)
     {
-        _socket = new WebSocket($"ws://{host}:{port}");
-        _socket.OnMessage += (bytes) =>
+        var uri = $"{URL}/{api.ToString()}";
+        Debug.Log(uri);
+        if (api == RequestApis.savedata)
         {
-            var msg = Encoding.ASCII.GetString(bytes);
-            Debug.Log(msg + " msg from server");
-            Command(msg);
-        };
-        _socket.OnOpen += () => { Debug.Log("Connection Open"); };
-
-        _socket.OnError += (e) => { Debug.Log("Error! " + e); };
-
-        _socket.OnClose += (e) => { Debug.Log("Connection closed!"); };
-
-        InvokeRepeating("SendWebSocketMessage", 0.0f, 0.3f);
-        await _socket.Connect();
-    }
-
-    private void Update()
-    {
-#if !UNITY_WEBGL || UNITY_EDITOR
-        _socket.DispatchMessageQueue();
-#endif
-    }
-
-    public async void Request(string cmd)
-    {
-        if (_socket.State != WebSocketState.Open) return;
-        await _socket.SendText(cmd);
-    }
-
-    private void Command(string cmd)
-    {
-        if (!cmd.Contains(":")) return;
-        try
+            Debug.Log(data);
+            var request = UnityWebRequest.Post(uri, data);
+            // request.SetRequestHeader("Content-Type", "application/json");
+            StartCoroutine(SendRequest(request, Debug.Log));
+        }
+        else
         {
-            var c = cmd.Split(":");
-            switch (c[0])
+            var request = UnityWebRequest.Get(uri);
+            StartCoroutine(SendRequest(request, s =>
             {
-                case "HighScore":
+                Debug.Log(s);
+                switch (api)
                 {
-                    var highScore = int.Parse(c[1]);
-                    GameManager.Singleton.HighestScore = highScore;
-                    break;
-                }
-                case "LeaderBoard":
-                {
-                    var player = c[1].Split(",");
-                    var pName = player[0];
-                    var pClassName = player[1];
-                    var score = int.Parse(player[2]);
-                    var data = new PlayerData()
+                    case RequestApis.highscore:
                     {
-                        playerName = pName,
-                        className = pClassName,
-                        score = score
-                    };
-                    GameManager.Singleton.AddDataToLeaderBoard(data);
-                    break;
+                        var json = JObject.Parse(s);
+                        var value = (int)json.GetValue("score");
+                        GameManager.Singleton.HighestScore = value;
+                        break;
+                    }
+                    case RequestApis.leaderboard:
+                    {
+                        var array = JArray.Parse(s);
+                        var dataList = array.ToObject<List<PlayerData>>();
+                        if (dataList == null) return;
+                        Debug.Log(dataList.Count + "data loaded");
+                        foreach (var t in dataList)
+                        {
+                            // Debug.Log(dataList[i].ToData());
+                            GameManager.Singleton.AddDataToLeaderBoard(t);
+                        }
+
+                        // foreach (var jToken in array)
+                        // {
+                        //     var json = (JObject)jToken;
+                        //     string pName = null, tName = null;
+                        //     var score = 0;
+                        //     if (json.TryGetValue("pName", out var value))
+                        //     {
+                        //         pName = (string)value;
+                        //     }
+                        //     
+                        //     if (json.TryGetValue("pName", out var value2))
+                        //     {
+                        //         tName = (string)value;
+                        //     }
+                        //     
+                        //     if (json.TryGetValue("pName", out var value3))
+                        //     {
+                        //         score = (int)value;
+                        //     }
+                        //     
+                        //     var data = new PlayerData
+                        //     {
+                        //         pName = pName,
+                        //         tName = tName,
+                        //         score = score
+                        //     };
+                        //     GameManager.Singleton.AddDataToLeaderBoard(data);
+                        // }
+
+                        break;
+                    }
+                    case RequestApis.savedata:
+                    default:
+                        // ignore
+                        break;
                 }
-                default: break;
-            }
-        }
-        catch
-        {
-            // ignore
+            }));
         }
     }
 
-    private async void OnApplicationQuit()
+    private IEnumerator SendRequest(UnityWebRequest request, Action<string> result = null)
     {
-        await _socket.Close();
+        yield return request.SendWebRequest();
+        if (request.result == UnityWebRequest.Result.Success)
+        {
+            result?.Invoke(request.downloadHandler.text);
+        }
     }
+
+    // public async void StartServer()
+    // {
+    //     _socket = new WebSocket($"wss://{host}:{port}");
+    //     _socket.OnMessage += (bytes) =>
+    //     {
+    //         var msg = Encoding.ASCII.GetString(bytes);
+    //         Debug.Log(msg + " msg from server");
+    //         Command(msg);
+    //     };
+    //     _socket.OnOpen += () => { Debug.Log("Connection Open"); };
+    //
+    //     _socket.OnError += (e) => { Debug.Log("Error! " + e); };
+    //
+    //     _socket.OnClose += (e) => { Debug.Log("Connection closed!"); };
+    //
+    //     InvokeRepeating("SendWebSocketMessage", 0.0f, 0.3f);
+    //     await _socket.Connect();
+    // }
+
+//     private void Update()
+//     {
+// #if !UNITY_WEBGL || UNITY_EDITOR
+//         _socket.DispatchMessageQueue();
+// #endif
+//     }
+
+    // public async void Request(string cmd)
+    // {
+    //     if (_socket.State != WebSocketState.Open) return;
+    //     await _socket.SendText(cmd);
+    // }
+
+    // private void Command(string cmd)
+    // {
+    //     if (!cmd.Contains(":")) return;
+    //     try
+    //     {
+    //         var c = cmd.Split(":");
+    //         switch (c[0])
+    //         {
+    //             case "HighScore":
+    //             {
+    //                 var highScore = int.Parse(c[1]);
+    //                 GameManager.Singleton.HighestScore = highScore;
+    //                 break;
+    //             }
+    //             case "LeaderBoard":
+    //             {
+    //                 var player = c[1].Split(",");
+    //                 var pName = player[0];
+    //                 var pClassName = player[1];
+    //                 var score = int.Parse(player[2]);
+    //                 var data = new PlayerData()
+    //                 {
+    //                     pName = pName,
+    //                     tName = pClassName,
+    //                     score = score
+    //                 };
+    //                 GameManager.Singleton.AddDataToLeaderBoard(data);
+    //                 break;
+    //             }
+    //             default: break;
+    //         }
+    //     }
+    //     catch
+    //     {
+    //         // ignore
+    //     }
+    // }
+
+    // private async void OnApplicationQuit()
+    // {
+    //     await _socket.Close();
+    // }
 }

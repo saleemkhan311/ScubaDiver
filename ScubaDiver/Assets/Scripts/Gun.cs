@@ -21,7 +21,7 @@ public class Gun : MonoBehaviour
     {
         if(GameManager.Singleton.gameOver)
         {
-            this.enabled = false;
+            enabled = false;
         }
 
         Vector2 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);

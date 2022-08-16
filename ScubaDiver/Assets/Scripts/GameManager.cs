@@ -1,3 +1,5 @@
+using System;
+using System.Collections;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -123,7 +125,7 @@ public class GameManager : MonoBehaviour
     private void Start()
     {
         Singleton = this;
-        WebSocketClient.Singleton.StartServer();
+        // WebSocketClient.Singleton.StartServer();
         gameOver = false;
         TotalTrash = Score = 0;
         SpawnRandomAnimals();
@@ -131,19 +133,27 @@ public class GameManager : MonoBehaviour
         Time.timeScale = 0;
         inGameMenu.SetActive(false);
         startMenu.SetActive(true);
+        
+        // save data test
+        var data = new PlayerData()
+        {
+            pName = "syed",
+            tName = "C3",
+            score = 55
+        };
+        WebSocketClient.Singleton.RequestApi(RequestApis.savedata, data.ToForm());
     }
 
-    private void Update()
+    private void FixedUpdate()
     {
         if (!_startedGame) return;
         if (gameOver) return;
-        if (Time.fixedTime % 120 == 0)
-        {
-            trashSpawnDelay -= .5f;
-            trashSpawnDelay = Mathf.Clamp(trashSpawnDelay, 2, 5);
-            trashSpawnFrequency++;
-            trashSpawnFrequency = Mathf.Clamp(trashSpawnFrequency, 1, 3);
-        }
+        trashSpawnFrequency = (int)Time.fixedTime / 40 + 1;
+        trashSpawnFrequency = Mathf.Clamp(trashSpawnFrequency, 1, 7);
+        Time.timeScale = Time.fixedTime / 150 + 1;
+        if (Time.fixedTime % 65 != 0) return;
+        trashSpawnDelay -= .5f;
+        trashSpawnDelay = Mathf.Clamp(trashSpawnDelay, 1.5f, 5);
     }
 
     private void SpawnRandomAnimals()
@@ -172,13 +182,19 @@ public class GameManager : MonoBehaviour
 
     public void GameOver()
     {
-        RequestLeaderBoardData();
+        if (gameOver) return;
         gameOver = true;
         gameOverPanel.SetActive(true);
         Time.timeScale = 0;
         _data.score = Score;
         SavePlayerData();
+        WebSocketClient.Singleton.RequestApi(RequestApis.leaderboard);
     }
+    // IEnumerator Delay(float delay, Action action)
+    // {
+    //     yield return new WaitForSeconds(delay);
+    //     action.Invoke();
+    // }
 
     public void PlayAudio(AudioClip clip)
     {
@@ -192,8 +208,8 @@ public class GameManager : MonoBehaviour
         if (string.IsNullOrEmpty(nameInput.text)) return;
         _data = new PlayerData
         {
-            playerName = nameInput.text,
-            className = teamPicker.options[teamPicker.value].text,
+            pName = nameInput.text,
+            tName = teamPicker.options[teamPicker.value].text,
             score = 0
         };
         Time.timeScale = 1;
@@ -206,13 +222,13 @@ public class GameManager : MonoBehaviour
     //-------------------------------------------------------Data Manager-----------------------------------------
     private void SavePlayerData()
     {
-        WebSocketClient.Singleton.Request(_data.ToData()); // SaveData:
+        WebSocketClient.Singleton.RequestApi(RequestApis.savedata, _data.ToForm()); // SaveData:
         // RipNetwork.Singleton.client.Send(_data.ToRipMsg());
     }
 
     private void RequestHighScore()
     {
-        WebSocketClient.Singleton.Request("highscore");
+        WebSocketClient.Singleton.RequestApi(RequestApis.highscore);
         // var msg = Message.Create(MessageSendMode.reliable, ClientToServer.RequestHighScore);
         // msg.AddInt(0);
         // RipNetwork.Singleton.client.Send(msg);
@@ -234,8 +250,6 @@ public class GameManager : MonoBehaviour
     // Loading all the score list for leaderboard
     private void RequestLeaderBoardData()
     {
-        Debug.Log(WebSocketClient.Singleton + " web socket");
-        WebSocketClient.Singleton.Request("leaderBoard");
         // var msg = Message.Create(MessageSendMode.reliable, ClientToServer.RequestLeaderBoard);
         // msg.AddInt(0);
         // RipNetwork.Singleton.client.Send(msg);
@@ -265,7 +279,6 @@ public class GameManager : MonoBehaviour
 
     public void AddDataToLeaderBoard(PlayerData data)
     {
-        Debug.Log(data.ToString());
         var box = Instantiate(historyBoxPrefab, leaderBoardParent).GetComponent<HistoryBox>();
         box.SetData(data);
         _totalDataCount++;

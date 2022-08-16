@@ -79,7 +79,7 @@ public class Trash : MonoBehaviour
         transform.SetParent(null);
         EnableTrash();
         rb.velocity = force;
-        Invoke(nameof(ResetPick), 3f);
+        Invoke(nameof(ResetPick), 1.5f);
     }
 
     private void ResetPick()

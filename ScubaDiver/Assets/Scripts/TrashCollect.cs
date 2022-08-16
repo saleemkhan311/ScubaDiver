@@ -35,7 +35,7 @@ public class TrashCollect : MonoBehaviour
     {
         foreach (var trash in trashList)
         {
-            trash.Throw(shootPoint.right * powerCharge * 100);
+            trash.Throw(shootPoint.right * (powerCharge * 65));
         }
 
         trashList.Clear();

@@ -1,18 +1,20 @@
-﻿public struct PlayerData
+﻿using UnityEngine;
+
+public struct PlayerData
 {
-    public string playerName;
-    public string className;
+    public string pName;
+    public string tName;
     public int score;
 
-    // public static PlayerData LoadJson(string json)
-    // {
-    //     return JsonUtility.FromJson<PlayerData>(json);
-    // }
-    //
-    // public static string ToJson(PlayerData data)
-    // {
-    //     return JsonUtility.ToJson(data);
-    // }
+    public static PlayerData LoadJson(string json)
+    {
+        return JsonUtility.FromJson<PlayerData>(json);
+    }
+    
+    public static string ToJson(PlayerData data)
+    {
+        return JsonUtility.ToJson(data);
+    }
     //
     // public string SaveQuery()
     // {
@@ -21,12 +23,25 @@
     //
     public override string ToString()
     {
-        return $"{playerName} from team {className} has score {score}";
+        return $"{pName} from team {tName} has score {score}";
     }
 
     public string ToData()
     {
-        return $"saveData:{playerName},{className},{score}";
+        return "{" +
+               $"\"pName\": \"{pName}\","+
+               $"\"tName\": \"{tName}\","+
+               $"\"score\": {score},"
+               +"}";
+    }
+
+    public WWWForm ToForm()
+    {
+        var form = new WWWForm();
+        form.AddField("pName", pName);
+        form.AddField("tName", tName);
+        form.AddField("score", score);
+        return form;
     }
     
     // public Message ToRipMsg()
