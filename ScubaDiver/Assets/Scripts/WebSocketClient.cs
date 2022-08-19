@@ -34,7 +34,7 @@ public class WebSocketClient : MonoBehaviour
     // [SerializeField] private string host;
     // [SerializeField] private int port;
 
-    private const string URL = "http://54.255.123.14:5000";
+    private const string URL = "https://yeetrash.herokuapp.com";
 
     // private WebSocket _socket;
 
